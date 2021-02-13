@@ -307,5 +307,8 @@ const erc20_abi = [
   },
 ];
 
+module.exports.airdrop_addr = '0x4ee7c0F5480Eb1EDd8902a5E8b991ed52992d5f5';
+module.exports.token_addr = '0x111111111117dc0aa78b770fa6a738034120c302';
+
 module.exports.airdrop_abi = airdrop_abi;
 module.exports.erc20_abi = erc20_abi;
