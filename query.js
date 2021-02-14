@@ -1,5 +1,12 @@
-const { connection } = require('./connections');
-const { BigNumber, utils } = require('ethers');
+const { connection, provider } = require('./connections');
+const { ethers, BigNumber, utils } = require('ethers');
+
+const {
+  airdrop_abi,
+  erc20_abi,
+  airdrop_addr,
+  token_addr,
+} = require('./constants');
 
 const App = async () => {
   // check the latest block in the database;
@@ -9,18 +16,19 @@ const App = async () => {
   console.log('latest block in database:', blockHead);
 
   // check all the claimed amount;
-  let total = BigNumber.from('0');
-  sql = `SELECT amount from oneinch.airdrop`;
+  sql = `SELECT SUM(amount) as total from oneinch.airdrop; `;
   result = connection.query(sql);
-  result.forEach((e) => {
-    let amount = BigNumber.from(e.amount);
-
-    total = total.add(amount);
-  });
 
   console.log(
     'total claimed token:',
-    parseFloat(utils.formatUnits(total, 'ether')).toFixed(2)
+    parseFloat(result[0].total / 1e18).toFixed(2)
+  );
+
+  // check the balance in the merkeldrop contract
+  let oneinch = new ethers.Contract(token_addr, erc20_abi, provider);
+  result = await oneinch.functions.balanceOf(airdrop_addr);
+  console.log(
+    `remaining balance: ${parseFloat(utils.formatEther(result[0])).toFixed(2)}`
   );
 };
 

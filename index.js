@@ -15,7 +15,6 @@ const QUERY_INTERVAL = 100;
 
 const App = async () => {
   let airdrop = new ethers.Contract(airdrop_addr, airdrop_abi, provider);
-  let oneinch = new ethers.Contract(token_addr, erc20_abi, provider);
 
   let filter = await airdrop.filters.Claimed();
 
@@ -42,16 +41,19 @@ const App = async () => {
       queryDone = true;
     }
 
-    console.log(`recording from ${from} to ${to}`);
+    console.group(`recording from ${from} to ${to}`);
 
     let events = await airdrop.queryFilter(filter, from, to);
     total = total + events.length;
     events.forEach(async (e) => {
-      processClaimEvent(e);
+      console.log('process block:', e.blockNumber);
+      await processClaimEvent(e);
     });
 
     indexBlock = indexBlock + QUERY_INTERVAL + 1;
+    console.groupEnd();
   }
+
   console.log('history record done. total:', total);
 
   // airdrop.on(filter, (log, event, test) => {
@@ -68,12 +70,12 @@ const App = async () => {
       log.blockNumber
     );
     events.forEach(async (e) => {
-      processClaimEvent(e);
+      await processClaimEvent(e);
     });
   });
 };
 
-const processClaimEvent = (e) => {
+const processClaimEvent = async (e) => {
   // console.group('transaction hash:', e.transactionHash.toLowerCase());
   // console.log('block:', e.blockNumber);
   // console.log('merkle index:', e.args.index.toString());
@@ -88,11 +90,15 @@ const processClaimEvent = (e) => {
 
   // if no duplicate
   if (result.length == 0) {
-    let sql = `INSERT INTO oneinch.airdrop (block, blockHash, merkleId, account, amount) VALUES (${
+    // get timestamp
+    let block = await provider.getBlock(e.blockNumber);
+    let timestamp = block.timestamp;
+
+    let sql = `INSERT INTO oneinch.airdrop (block, blockHash, merkleId, account, amount, timestamp) VALUES (${
       e.blockNumber
     },'${e.transactionHash.toLowerCase()}',${
       e.args.index
-    },'${e.args.account.toLowerCase()}','${e.args.amount.toString()}')`;
+    },'${e.args.account.toLowerCase()}','${e.args.amount.toString()}',${timestamp})`;
     //console.log(sql);
     try {
       connection.query(sql);
