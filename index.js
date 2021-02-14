@@ -72,21 +72,19 @@ const App = async () => {
   // look for the remaining amount of 1inch token in contract
   // check the balance in the merkeldrop contract
   let oneinch = new ethers.Contract(token_addr, erc20_abi, provider);
-  
-  setInterval(()=>{
+
+  setInterval(async () => {
     result = await oneinch.functions.balanceOf(airdrop_addr);
     console.log(
-      `remaining balance: ${parseFloat(utils.formatEther(result[0])).toFixed(2)}`
+      `remaining balance: ${parseFloat(utils.formatEther(result[0])).toFixed(
+        2
+      )}`
     );
     sql = `UPDATE oneinch.summary set balance = '${parseFloat(
       utils.formatEther(result[0])
     ).toFixed(2)}'`;
     connection.query(sql);
-
-  },60000)
-  
-
-
+  }, 60000);
 };
 
 const processClaimEvent = async (e) => {
