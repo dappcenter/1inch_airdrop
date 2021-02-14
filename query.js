@@ -30,6 +30,10 @@ const App = async () => {
   console.log(
     `remaining balance: ${parseFloat(utils.formatEther(result[0])).toFixed(2)}`
   );
+  sql = `UPDATE oneinch.summary set balance = '${parseFloat(
+    utils.formatEther(result[0])
+  ).toFixed(2)}'`;
+  connection.query(sql);
 };
 
 App();

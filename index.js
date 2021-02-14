@@ -26,7 +26,7 @@ const App = async () => {
   let latestFromBlock = result[0].latest;
 
   let indexBlock =
-    latestFromBlock === 'undefined' ? AIRDROP_FROM : latestFromBlock + 1;
+    latestFromBlock === 'undefined' ? AIRDROP_FROM : latestFromBlock;
 
   console.log('latestFromBlock:', latestFromBlock);
   console.log('indexBlock:', indexBlock);
@@ -56,12 +56,7 @@ const App = async () => {
 
   console.log('history record done. total:', total);
 
-  // airdrop.on(filter, (log, event, test) => {
-  //   console.log(log);
-  //   console.log(event);
-  //   console.log(test);
-  // });
-
+  // listening to the event
   provider.on(filter, async (log) => {
     console.log(log);
     events = await airdrop.queryFilter(
@@ -73,6 +68,25 @@ const App = async () => {
       await processClaimEvent(e);
     });
   });
+
+  // look for the remaining amount of 1inch token in contract
+  // check the balance in the merkeldrop contract
+  let oneinch = new ethers.Contract(token_addr, erc20_abi, provider);
+  
+  setInterval(()=>{
+    result = await oneinch.functions.balanceOf(airdrop_addr);
+    console.log(
+      `remaining balance: ${parseFloat(utils.formatEther(result[0])).toFixed(2)}`
+    );
+    sql = `UPDATE oneinch.summary set balance = '${parseFloat(
+      utils.formatEther(result[0])
+    ).toFixed(2)}'`;
+    connection.query(sql);
+
+  },60000)
+  
+
+
 };
 
 const processClaimEvent = async (e) => {
@@ -99,7 +113,7 @@ const processClaimEvent = async (e) => {
     },'${e.transactionHash.toLowerCase()}',${
       e.args.index
     },'${e.args.account.toLowerCase()}','${e.args.amount.toString()}',${timestamp})`;
-    //console.log(sql);
+    console.log(sql);
     try {
       connection.query(sql);
     } catch (err) {
